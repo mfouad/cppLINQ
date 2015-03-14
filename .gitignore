@@ -29,3 +29,5 @@
 *.suo
 CLinq.opensdf
 *.sdf
+
+debug/
