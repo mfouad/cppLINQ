@@ -7,101 +7,111 @@
 #include <functional>
 using namespace std;
 
-typedef vector<int> container_type;
-class Command;
-
-template <typename T>
+// A Command pattern, it is lazy evaluated at the end of the query, after you call Execute()
+// it is also a Strategy pattern, used to specify how a command will execute
+template <typename Filter> 
 class Command
 {
-	Command* m_pNextCommand;
-	Command* m_pPrevCommand;
-	list<T> m_result;
+	// types
+	//typedef function<void(value_type&)> Filter;
 
+	Filter		m_Filter;
+	string		m_name;
 public:
-	string m_name;
-	Command(string name) : m_name(name)
+	Command(string name, Filter& filter) : m_name(name), m_Filter(filter)
 	{
 		cout << name << " Invoked" << endl;
 	}
 
+	template<typename Container>
+	void Execute(Container& container)
+	{
+		m_Filter(container);
+	}
 
-	Command(const vector<T>& collection)
+};
+
+template <typename Predicate>
+Command<value_type> where(Predicate& predicate)
+{
+	return Command("Where", [&predicate](Container container)
+	{
+		container.remove_if(std::not1(predicate));
+	});
+}
+
+
+/*
+template <typename value_type>
+Command<value_type> where(function<bool(value_type&)>& predicate)
+{
+	return Command("Where", [&predicate] (Container container) 
+	{
+		container.remove_if(std::not1(predicate));
+	});
+}
+*/
+/*
+template <typename Predicate>
+Command<Predicate> count()
+{
+	return ValueCommand();
+}
+*/
+
+// Follows the Chain of Responsibility pattern
+template <class container>
+class LazyQuery
+{
+	// Types
+	typedef typename container::value_type value_type;	// the type of the collection elements. e.g. "int" in "vector<int>"
+	typedef std::function<bool(value_type&)> Predicate;	// The predicate function (or lambda) that will be used to filter elements
+
+	list<value_type> m_result;									// a temp container of the same type, so that we don't alter the original container
+	list<Command<value_type>&>	m_chain;
+
+public:
+
+	LazyQuery(const container& collection)
 	{
 		// Copy to a list
 		m_result.insert(m_result.begin(), collection.begin(), collection.end());
 	}
 
-	//template <typename param>
-	Command& Where(std::function<bool(T&)> predicate)
+	void Chain(const Command<value_type>& nextCommand)
 	{
-		// removes all the items that do not satisfy the predicate .. 
-		m_result.remove_if(std::not1(predicate));
+		m_chain.push(nextCommand);
+	}
+
+	LazyQuery& operator>> (const Command<value_type>& nextCommand)
+	{
+		chain(nextCommand);
+
 		return *this;
 	}
-
-	template <class Predicate>
-	bool any(Predicate& predicate)
+	/*
+	// if we find a terminal command like Count() or Select()
+	int operator>> (const ValueCommand& valueCommand)
 	{
-		return std::any_of(m_result.begin(), m_result.end(), predicate);
-	}
+		ExecuteChain();
+		return valueCommand.Execute(m_result);
+	}*/
 
-	template <class Predicate>
-	void print(Predicate& predicate)
+	void ExecuteChain()
 	{
-		std::for_each(m_result.begin(), m_result.end(), [](int& e) { if (predicate(e)) cout << e << endl; });
+		for (auto itr = m_chain.begin(); itr != m_chain.end(); itr++)
+		{
+			Command& cmd = *itr;
+			cmd.Execute(m_result);
+		}
 	}
-
-	void print()
-	{
-		std::for_each(m_result.begin(), m_result.end(), [](int& e) { cout << e << endl; });
-	}
-
-	list<int>& Execute(container_type::iterator beginIt, container_type::iterator endIt)
-	{
-
-	}
-
-	void Chain(Command& nextCommand)
-	{
-		m_pNextCommand = &nextCommand;
-	}
-
+	
 };
 
-queue<Command>& operator>> (queue<Command>& chain, Command& nextCommand)
+template <typename Container>
+LazyQuery<Container> operator>> (const Container& container, Command<typename Container::value_type>& command)
 {
-	chain.push(nextCommand);
-
-	return chain;
-}
-
-
-Command& operator>> (Command& left, Command& right)
-{
-	cout << "chain " << left.m_name << " << " << right.m_name << endl;
-	return left;
-	// cmd.Execute(container.begin(), container.end());
-}
-
-
-Command& operator>> (container_type& container, Command& cmd)
-{
-	return cmd;
-	// cmd.Execute(container.begin(), container.end());
-}
-
-
-
-
-
-int main()
-{
-	vector<int> v{ 0, 1, 2, 3, 4 };
-
-	v >> Command("one") >> Command("two") >> Command("three");
-
-	cout << Command<int>(v).Where([](int& e){ return (e == 1); }).any([](int& e){return (e == 1); });
-
-	return 0;
+	LazyQuery<Container> query(container);
+	query.Chain(command);
 }
 

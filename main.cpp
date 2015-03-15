@@ -1,23 +1,33 @@
 #include "ImmediateEval.h"
+#include "LazyEval.h"
+#include <assert.h>
 
 void TestImmediateEvaluation()
 {
 	vector<int> v{ 0, 1, 2, 3, 4 };
 
-	From(v).Where([](int& e){ return (e == 1); }).print();
-	
-	assert(From(v).count() == 5);
-	From(v).Where([](int& e){ return (e == 1); }).count();
+	From(v).Where([](int& e){ return (e == 1); }).Print();
 
-//	From(v).Where([](int& e){ return (e == 1); }).any([](int& e){return (e == 1); });
+	assert(From(v).Count() == 5);
+	From(v).Where([](int& e){ return (e == 1); }).Count();
+
+	//	From(v).Where([](int& e){ return (e == 1); }).any([](int& e){return (e == 1); });
 	//*/
 }
 
 
+void TestLazyQuery()
+{
+	vector<int> v{ 0, 1, 2, 3, 4 };
+
+	//v >>
+	where([](int& e) -> bool { return (e == 1); });
+}
 
 int main()
 {
-	TestImmediateEvaluation();
+	// TestImmediateEvaluation();
+	TestLazyQuery();
 
 	return 0;
 }
