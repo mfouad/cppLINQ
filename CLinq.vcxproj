@@ -83,6 +83,7 @@
   <ItemGroup>
     <ClInclude Include="ImmediateEval.h" />
     <ClInclude Include="LazyEval.h" />
+    <ClInclude Include="LazyStream.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -26,5 +26,8 @@
     <ClInclude Include="ImmediateEval.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="LazyStream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

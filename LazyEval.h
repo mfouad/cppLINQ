@@ -7,9 +7,10 @@
 #include <functional>
 using namespace std;
 
+typedef vector<int> Container;
+
 // A Command pattern, it is lazy evaluated at the end of the query, after you call Execute()
 // it is also a Strategy pattern, used to specify how a command will execute
-template <typename Filter> 
 class Command
 {
 	// types
@@ -29,73 +30,57 @@ public:
 		m_Filter(container);
 	}
 
+	template <typename Predicate>
+	Command& operator() (Predicate& predicate)
+	{
+
+		return *this;
+	}
+
 };
 
 template <typename Predicate>
-Command<value_type> where(Predicate& predicate)
+auto where(Predicate& predicate)  -> decltype(Command<_where>)
 {
-	return Command("Where", [&predicate](Container container)
+	auto _where = [&predicate](Container container)
 	{
 		container.remove_if(std::not1(predicate));
-	});
+	};
+	
+	return Command("Where", _where);
 }
 
 
-/*
-template <typename value_type>
-Command<value_type> where(function<bool(value_type&)>& predicate)
-{
-	return Command("Where", [&predicate] (Container container) 
-	{
-		container.remove_if(std::not1(predicate));
-	});
-}
-*/
-/*
-template <typename Predicate>
-Command<Predicate> count()
-{
-	return ValueCommand();
-}
-*/
 
 // Follows the Chain of Responsibility pattern
-template <class container>
 class LazyQuery
 {
 	// Types
-	typedef typename container::value_type value_type;	// the type of the collection elements. e.g. "int" in "vector<int>"
-	typedef std::function<bool(value_type&)> Predicate;	// The predicate function (or lambda) that will be used to filter elements
+//	typedef typename container::value_type value_type;	// the type of the collection elements. e.g. "int" in "vector<int>"
+//	typedef std::function<bool(value_type&)> Predicate;	// The predicate function (or lambda) that will be used to filter elements
 
-	list<value_type> m_result;									// a temp container of the same type, so that we don't alter the original container
-	list<Command<value_type>&>	m_chain;
+	list<int> m_result;									// a temp container of the same type, so that we don't alter the original container
+	list<Command&>	m_chain;
 
 public:
 
-	LazyQuery(const container& collection)
+	LazyQuery(const Container& collection)
 	{
 		// Copy to a list
 		m_result.insert(m_result.begin(), collection.begin(), collection.end());
 	}
 
-	void Chain(const Command<value_type>& nextCommand)
+	void Chain(Command& nextCommand)
 	{
-		m_chain.push(nextCommand);
+		m_chain.push_back(nextCommand);
 	}
 
-	LazyQuery& operator>> (const Command<value_type>& nextCommand)
+	LazyQuery& operator>> (Command& nextCommand)
 	{
-		chain(nextCommand);
+		Chain(nextCommand);
 
 		return *this;
 	}
-	/*
-	// if we find a terminal command like Count() or Select()
-	int operator>> (const ValueCommand& valueCommand)
-	{
-		ExecuteChain();
-		return valueCommand.Execute(m_result);
-	}*/
 
 	void ExecuteChain()
 	{
@@ -108,10 +93,10 @@ public:
 	
 };
 
-template <typename Container>
-LazyQuery<Container> operator>> (const Container& container, Command<typename Container::value_type>& command)
+LazyQuery operator>> (const Container& container, Command& command)
 {
-	LazyQuery<Container> query(container);
+	LazyQuery query(container);
 	query.Chain(command);
 }
+
 
