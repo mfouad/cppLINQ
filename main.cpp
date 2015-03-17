@@ -18,10 +18,11 @@ void TestImmediateEvaluation()
 
 void TestLazyQuery()
 {
+	using namespace CommandFactory;
+
 	vector<int> v{ 0, 1, 2, 3, 4 };
 
-	//v >>
-	where([](int& e) -> bool { return (e == 1); });
+	LazyFrom(v).Where([](int& e) -> bool { return (e == 1); }).Print();
 }
 
 int main()
