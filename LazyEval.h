@@ -14,19 +14,16 @@ typedef function<bool(int&)> Predicate;
 // it is also a Strategy pattern, used to specify how a command will execute
 class Command
 {
+public:
 	Predicate	m_predicate;
 	string		m_name;
 public:
 	Command(string name, Predicate& predicate) : m_name(name), m_predicate(predicate)
 	{
-		cout << name << " Invoked" << endl;
+		cout << name << " command created" << endl;
 	}
 
-	template<typename Container>
-	void Execute(Container& container)
-	{
-
-	}
+	virtual void Execute(list<int>& container) = 0;
 };
 
 class WhereCommand: public Command
@@ -36,15 +33,15 @@ public:
 	WhereCommand(Predicate& predicate) : Command("Where", predicate)
 	{}
 
-	template<typename Container>
-	void Execute(Container container)
+	void Execute(list<int>& container)
 	{
 		container.remove_if(std::not1(m_predicate));
 	};
 };
 
 
-// An Factory that will create Concrete Commands based on the command type
+// kinda implements the ChainOfResponsiblity Pattern
+// This class maintains a chain of commands in a query, till the query is invoked, it executes them sequentially
 class CommandChain
 {
 protected:
@@ -69,56 +66,55 @@ public:
 
 	
 
-	
 };
 
 // Contains algorithms that can convert a list to a single item, e.g. (Count, First, Last, Max, TrueIfAny, TrueIfAll, ..)
 // These functions are executed immediately and are not lazy-loaded
 // currently implements just a subset of these functions..
-class ListComprehension
+class ListComprehension 
 {
 protected:
-	list<int> m_result;									// a temp container of the same type, so that we don't alter the original container
+	list<int> m_result;				// a temp container of the same type, so that we don't alter the original container
 
+	virtual void BeforeEvaluation() {}
 public:
 	bool Any(Predicate& predicate)
 	{
+		BeforeEvaluation();
 		return std::any_of(m_result.begin(), m_result.end(), predicate);
 	}
 
 	// Evaluators (terminal operations that terminate the query and evaluates it)
 	void Print(Predicate& predicate)
 	{
+		BeforeEvaluation();
 		std::for_each(m_result.begin(), m_result.end(), [&predicate](int& e) { if (predicate(e)) cout << e << " "; });
 		cout << endl;
 	}
 
 	void Print()
 	{
+		BeforeEvaluation();
 		std::for_each(m_result.begin(), m_result.end(), [](int& e) { cout << e << " "; });
 		cout << endl;
 	}
 
 	int Count(Predicate& predicate)
 	{
+		BeforeEvaluation();
 		return std::count_if(m_result.begin(), m_result.end(), predicate);
 	}
 
 	int Count()
 	{
+		BeforeEvaluation();
 		return m_result.size();
 	}
 };
 
-// Follows the Chain of Responsibility pattern
-class LazyQuery : public CommandChain, public ListComprehension
+// An abstract factory pattern, it creates concrete instances of Command class (Where, select, join ...)
+class LazyQuery : public ListComprehension, public CommandChain
 {
-	// Types
-//	typedef typename container::value_type value_type;	// the type of the collection elements. e.g. "int" in "vector<int>"
-//	typedef std::function<bool(value_type&)> Predicate;	// The predicate function (or lambda) that will be used to filter elements
-
-	
-
 public:
 
 	LazyQuery(const Container& collection)
@@ -127,18 +123,19 @@ public:
 		m_result.insert(m_result.begin(), collection.begin(), collection.end());
 	}
 
-	void ExecuteChain()
+	// override
+	void BeforeEvaluation()
 	{
-		for (auto pCmd : m_chain)
+		for (Command* pCmd : m_chain)
 		{
 			pCmd->Execute(m_result);
 		}
 	}
 
 public:	// Factory methods 
-	LazyQuery Where(Predicate predicate)
+	LazyQuery& Where(Predicate predicate)
 	{
-		new WhereCommand(predicate);
+		Chain(new WhereCommand(predicate));
 		return *this;
 	}
 	
@@ -148,9 +145,4 @@ public:	// Factory methods
 LazyQuery LazyFrom(Container& collection)
 {
 	return LazyQuery(collection);
-}
-
-namespace CommandFactory
-{
-	
 }

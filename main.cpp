@@ -11,14 +11,13 @@ void TestImmediateEvaluation()
 	assert(From(v).Count() == 5);
 	From(v).Where([](int& e){ return (e == 1); }).Count();
 
-	//	From(v).Where([](int& e){ return (e == 1); }).any([](int& e){return (e == 1); });
-	//*/
+	assert(From(v).Where([](int& e){ return (e == 1); }).Any([](int& e){return (e == 1); }) == true);
+	
 }
 
 
 void TestLazyQuery()
 {
-	using namespace CommandFactory;
 
 	vector<int> v{ 0, 1, 2, 3, 4 };
 
@@ -27,7 +26,7 @@ void TestLazyQuery()
 
 int main()
 {
-	// TestImmediateEvaluation();
+	TestImmediateEvaluation();
 	TestLazyQuery();
 
 	return 0;

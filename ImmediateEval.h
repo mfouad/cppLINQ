@@ -37,14 +37,14 @@ public:
 		return *this;
 	}
 
-	bool Any(Predicate& predicate)
+	bool Any(Predicate predicate)
 	{
 		return std::any_of(m_result.begin(), m_result.end(), predicate);
 	}
 
 
 	// Evaluators (terminal operations that terminate the query and evaluates it)
-	void Print(Predicate& predicate)
+	void Print(Predicate predicate)
 	{
 		std::for_each(m_result.begin(), m_result.end(), [](int& e) { if (predicate(e)) cout << e << " "; });
 		cout << endl;
@@ -56,7 +56,7 @@ public:
 		cout << endl;
 	}
 
-	int Count(Predicate& predicate)
+	int Count(Predicate predicate)
 	{
 		return std::count_if(m_result.begin(), m_result.end(), predicate);
 	}
