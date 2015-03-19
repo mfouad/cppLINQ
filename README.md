@@ -1,9 +1,7 @@
-# cppLINQ
-LINQ for C++
+#LINQ for C++
 
-This project offers two implementations to a LINQ support in C++
+This project offers two implementations to a LINQ support in C++, *Immediate Evaluation* and *Lazy Evaluation*.
 
-##Flavors
 ###Immediate Evaluation
 Each query function is immediatly evaluated, so `where` will return a filtered `list` not a `Query` object.
 
