@@ -27,4 +27,4 @@ From(v).Where( [](int& e){return (e == 1);} ).Count();
 ```
 
 ###Class Diagram
-![class diagram](./class diagram.png?raw=true)
+![class diagram](./Class Diagram.png?raw=true)
