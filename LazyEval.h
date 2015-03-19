@@ -9,16 +9,16 @@ using namespace std;
 
 typedef vector<int> Container;
 typedef function<bool(int&)> Predicate;
+typedef function<void(int&)> UpdateFunc;
 
 // A Command pattern, it is lazy evaluated at the end of the query, after you call Execute()
 // it is also a Strategy pattern, used to specify how a command will execute
 class Command
 {
-public:
-	Predicate	m_predicate;
+protected:
 	string		m_name;
 public:
-	Command(string name, Predicate& predicate) : m_name(name), m_predicate(predicate)
+	Command(string name) : m_name(name)
 	{
 		cout << name << " command created" << endl;
 	}
@@ -28,9 +28,10 @@ public:
 
 class WhereCommand: public Command
 {
+	Predicate	m_predicate;
 public:
 
-	WhereCommand(Predicate& predicate) : Command("Where", predicate)
+	WhereCommand(Predicate& predicate) : Command("Where"), m_predicate(predicate)
 	{}
 
 	void Execute(list<int>& container)
@@ -39,6 +40,34 @@ public:
 	};
 };
 
+
+class UpdateCommand : public Command
+{
+	UpdateFunc		m_updateFunc;
+public:
+
+	UpdateCommand(UpdateFunc& updateFunc) : Command("Update"), m_updateFunc(updateFunc)
+	{}
+
+	void Execute(list<int>& container)
+	{
+		for_each(container.begin(), container.end(), m_updateFunc);
+	};
+};
+
+
+class OrderByCommand : public Command
+{
+public:
+
+	OrderByCommand(Predicate& comparer) : Command("OrderBy")
+	{}
+
+	void Execute(list<int>& container)
+	{
+		throw exception("not implemented");
+	};
+};
 
 // kinda implements the ChainOfResponsiblity Pattern
 // This class maintains a chain of commands in a query, till the query is invoked, it executes them sequentially
@@ -109,6 +138,12 @@ public:
 	{
 		BeforeEvaluation();
 		return m_result.size();
+	}
+
+	list<int>& ToList()
+	{
+		BeforeEvaluation();
+		return m_result;
 	}
 };
 
